@@ -10,3 +10,4 @@ venv/
 .venv/
 .DS_Store
 datasets/f311.csv
+datasets/
