@@ -16,8 +16,3 @@ services:
 
       - key: SECRET_KEY
         generateValue: true
-
-    disk:
-      name: complaint-data
-      mountPath: /opt/render/project/src/database
-      sizeGB: 1
