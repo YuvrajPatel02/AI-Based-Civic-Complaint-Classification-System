@@ -104,10 +104,14 @@ def dashboard():
     priority = request.args.get("priority") or None
     status = request.args.get("status") or None
     complaints = db.list_complaints(category=category, priority=priority, status=status)
+    complaints = [
+        c for c in complaints
+        if c["status"] != "Resolved"
+        ]
     stats = db.get_stats()
     categories = ["Garbage", "Road Damage", "Water Leakage", "Drainage Blockage", "Streetlight Fault"]
     priorities = ["High", "Medium", "Low"]
-    statuses = ["Open", "In Progress", "Resolved"]
+    statuses = ["Open", "In Progress"]
     return render_template(
         "dashboard.html",
         complaints=complaints,
@@ -120,6 +124,14 @@ def dashboard():
         selected_status=status,
     )
 
+@app.route("/resolved")
+def resolved():
+    complaints = db.list_complaints(status="Resolved")
+
+    return render_template(
+        "resolved.html",
+        complaints=complaints
+    )
 
 @app.route("/update_status/<complaint_id>", methods=["POST"])
 def update_status(complaint_id):

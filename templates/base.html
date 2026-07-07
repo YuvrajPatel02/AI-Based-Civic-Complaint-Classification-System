@@ -21,6 +21,8 @@
            class="{{ 'active' if request.endpoint == 'index' else '' }}">Submit Complaint</a>
         <a href="{{ url_for('dashboard') }}"
            class="{{ 'active' if request.endpoint == 'dashboard' else '' }}">Dashboard</a>
+        <a href="{{ url_for('resolved') }}"
+           class="{{ 'active' if request.endpoint == 'resolved' else '' }}">Resolved</a>   
       </div>
     </div>
   </nav>

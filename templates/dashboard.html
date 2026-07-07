@@ -159,12 +159,20 @@ content %}
               class="status-form">
 
             <select name="status" class="status-select">
-                {% for s in statuses %}
-                <option value="{{ s }}" {% if c.status == s %}selected{% endif %}>
-                    {{ s }}
-                </option>
-                {% endfor %}
-            </select>
+
+    <option value="Open" {% if c.status == "Open" %}selected{% endif %}>
+        Open
+    </option>
+
+    <option value="In Progress" {% if c.status == "In Progress" %}selected{% endif %}>
+        In Progress
+    </option>
+
+    <option value="Resolved">
+        Resolved
+    </option>
+
+</select>
 
             <button type="submit" class="update-btn">
                 Update
