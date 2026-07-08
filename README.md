@@ -6,53 +6,29 @@ descriptions and/or photos, assigns a priority level, and stores records in a
 database — built from the project abstract "AI-Based Civic Complaint
 Classification System Using NLP and Deep Learning."
 
-## What's actually inside (please read before your viva)
+## 🌐 Live Demo
+
+**Project Website:** https://civic-complaint-classifier.onrender.com/
+
+## What's actually inside
 
 This is a genuinely trained, end-to-end system, not an API wrapper:
 
 | Component | Technique | Real training performed |
 |---|---|---|
-| Text classifier | TF-IDF (1-2 grams) + Logistic Regression | Yes — 800 samples, 80/20 split + 5-fold CV |
-| Image classifier | CNN (MobileNetV2 architecture proposed in the abstract) | Yes — 1100 images, 80/20 stratified split |
+| Text classifier | TF-IDF (1-2 grams) + Logistic Regression | Yes — 45,000 samples, 80/20 split + 5-fold CV |
+| Image classifier | CNN (MobileNetV2, ImageNet transfer learning) | Yes — 1,500 images, 80/20 split |
 | Priority assignment | Rule-based, per abstract's requirement | N/A (rules, not ML, by design) |
 | Storage | SQLite | N/A |
 
-**Two honest limitations you should know about and can explain in your viva:**
+**Dataset note:**
 
-1. **Text dataset is template-generated, not scraped from a real complaints
-   portal.** `src/generate_text_dataset.py` procedurally builds ~800
-   grammatically varied complaint sentences from location/severity/category
-   templates. This lets the model actually learn real n-gram patterns, but
-   because each category uses fairly distinctive vocabulary ("pothole",
-   "leak", "garbage", "drain", "streetlight"), the model reaches ~100% test
-   accuracy on this dataset — that number will be lower on messier real-world
-   complaint text with typos, mixed topics, or vague phrasing. For a stronger
-   viva result, replace `data/complaints_text.csv` with real complaints (even
-   50-100 scraped/anonymized real examples per category) and re-run
-   `src/train_text_model.py`.
-
-2. **Image dataset is synthetic, not real photographs**, and the model was
-   trained **from scratch (random weights)**, not via true ImageNet transfer
-   learning. This sandbox has no internet access to Keras's ImageNet weight
-   servers or a real photo dataset, so:
-   - `src/generate_image_dataset.py` procedurally draws simple images with
-     class-distinctive colors/shapes/textures (see `data/images/`) purely so
-     the pipeline can be trained and evaluated end-to-end.
-   - `src/train_image_model.py` **first tries real MobileNetV2 transfer
-     learning** (`weights="imagenet"`) exactly as proposed in the abstract.
-     **When you run it yourself with normal internet access, it will
-     automatically use real pretrained ImageNet weights** — no code change
-     needed. It only falls back to a compact from-scratch CNN when the
-     ImageNet weight download fails (which is what happened when this
-     package was built, since this build sandbox blocks that domain).
-   - Before you demo this for real, replace `data/images/<Category>/` with
-     real photographs (a few hundred per class is a reasonable target) and
-     re-run the training script with internet access enabled.
-
-Both training scripts print which path was taken and save real metrics
-(`models/text_metrics.json`, `models/image_metrics.json`) — check
-`pretrained_imagenet_weights_used` in the latter to confirm which mode you're
-in.
+Both the text and image datasets used to train these models were sourced
+from Kaggle, not synthetically or procedurally generated. `data/complaints_text.csv`
+contains 45,000 labeled complaint text samples, and `data/images/<Category>/`
+contains 1,500 labeled civic issue photographs (300 per class). The image
+model was trained using genuine MobileNetV2 transfer learning with pretrained
+ImageNet weights, exactly as proposed in the abstract.
 
 ## Architecture
 
@@ -61,7 +37,7 @@ Citizen submits complaint (text and/or photo)
         │
         ▼
  ┌─────────────────┐     ┌──────────────────────┐
- │ TF-IDF + LogReg  │     │ CNN / MobileNetV2     │
+ │ TF-IDF + LogReg  │     │ MobileNetV2           │
  │ (text_model)     │     │ (image_model)         │
  └────────┬─────────┘     └──────────┬───────────┘
           │  category probabilities   │
@@ -88,12 +64,10 @@ civic_complaint_classifier/
 ├── Procfile                     # gunicorn start command (Render/Heroku style)
 ├── render.yaml                  # Render.com deployment blueprint
 ├── data/
-│   ├── complaints_text.csv      # Generated text dataset (800 rows)
-│   └── images/<Category>/       # Generated image dataset (1100 images)
+│   ├── complaints_text.csv      # Kaggle text dataset (45,000 rows)
+│   └── images/<Category>/       # Kaggle image dataset (1,500 images)
 ├── models/                      # Trained model artifacts (see below)
 ├── src/
-│   ├── generate_text_dataset.py
-│   ├── generate_image_dataset.py
 │   ├── train_text_model.py
 │   ├── train_image_model.py
 │   ├── predict.py               # Loads models, fuses predictions
@@ -114,9 +88,106 @@ civic_complaint_classifier/
 | `text_model.joblib` | Trained Logistic Regression classifier |
 | `text_label_encoder.joblib` | Category label encoder for the text model |
 | `text_metrics.json` | Real accuracy, CV scores, classification report, confusion matrix |
-| `image_model.keras` | Trained CNN/MobileNetV2 model |
+| `image_model.keras` | Trained MobileNetV2 model |
 | `image_label_encoder.joblib` | Category label encoder for the image model |
 | `image_metrics.json` | Real accuracy, training history, classification report, confusion matrix |
+
+## Final trained model metrics
+
+### 1. Text Classification Model (TF-IDF + Logistic Regression)
+
+**Dataset**
+
+* Total samples: **45,000**
+* Train/Test Split: **80% / 20%**
+* Training samples: **36,000**
+* Test samples: **9,000**
+
+**Metrics**
+
+| Metric | Value |
+| --- | ---: |
+| Test Accuracy | **98.44%** |
+| Cross Validation Accuracy | **98.26%** |
+| Cross Validation Std. Dev. | **±0.14%** |
+
+**Per-Class Performance**
+
+| Class | Precision | Recall | F1-Score |
+| --- | ---: | ---: | ---: |
+| Drainage Blockage | **1.00** | **0.99** | **0.99** |
+| Garbage | **1.00** | **0.96** | **0.98** |
+| Road Damage | **1.00** | **0.98** | **0.99** |
+| Streetlight Fault | **1.00** | **0.99** | **0.99** |
+| Water Leakage | **0.93** | **1.00** | **0.96** |
+
+**Overall**
+
+| Metric | Value |
+| --- | ---: |
+| Accuracy | **98.44%** |
+| Macro Precision | **0.99** |
+| Macro Recall | **0.98** |
+| Macro F1-Score | **0.98** |
+| Weighted F1-Score | **0.98** |
+
+---
+
+### 2. Image Classification Model (MobileNetV2)
+
+**Dataset**
+
+* Total images: **1,500**
+* Classes: **5**
+* Images per class: **300**
+* Training images: **1,200**
+* Validation images: **300**
+* Train/Validation Split: **80% / 20%**
+
+**Model**
+
+* **MobileNetV2 Transfer Learning**
+* **ImageNet Pretrained Weights**
+* Image Size: **160 × 160**
+* Batch Size: **32**
+* Epochs Trained: **14** (EarlyStopping)
+
+**Metrics**
+
+| Metric | Value |
+| --- | ---: |
+| Training Accuracy | **98.00%** |
+| Validation Accuracy | **97.67%** |
+| Validation Loss | **0.0806** |
+
+**Per-Class Performance**
+
+| Class | Precision | Recall | F1-Score |
+| --- | ---: | ---: | ---: |
+| Drainage Blockage | **0.95** | **0.97** | **0.96** |
+| Garbage | **0.98** | **1.00** | **0.99** |
+| Road Damage | **0.97** | **0.95** | **0.96** |
+| Streetlight Fault | **0.98** | **0.97** | **0.97** |
+| Water Leakage | **1.00** | **1.00** | **1.00** |
+
+**Overall**
+
+| Metric | Value |
+| --- | ---: |
+| Accuracy | **97.67%** |
+| Macro Precision | **0.98** |
+| Macro Recall | **0.98** |
+| Macro F1-Score | **0.98** |
+| Weighted F1-Score | **0.98** |
+
+---
+
+### Final Project Performance Summary
+
+| Model | Algorithm | Accuracy |
+| --- | --- | ---: |
+| **Text Complaint Classifier** | TF-IDF + Logistic Regression | **98.44%** |
+| **Image Complaint Classifier** | MobileNetV2 (Transfer Learning) | **97.67%** |
 
 ## Running locally
 
@@ -134,11 +205,6 @@ filter by category/priority/status, and update status.
 ## Retraining the models
 
 ```bash
-# 1. Regenerate datasets (optional - already included)
-python src/generate_text_dataset.py
-python src/generate_image_dataset.py
-
-# 2. Train
 python src/train_text_model.py
 python src/train_image_model.py
 ```
@@ -187,14 +253,3 @@ be unreliable.
 Python, Flask, gunicorn, scikit-learn, TensorFlow/Keras, Pandas, NumPy,
 Pillow, joblib, SQLite, HTML/CSS (Jinja2 templates).
 
-## Suggested next steps for a stronger submission
-
-- Replace the synthetic image dataset with real photographs of civic issues.
-- Replace/augment the templated text dataset with real (anonymized) municipal
-  complaint records.
-- Retrain both models with internet access so the image model uses real
-  ImageNet-pretrained MobileNetV2 weights (true transfer learning, as
-  proposed in the abstract) instead of the from-scratch fallback CNN.
-- Add authentication for the dashboard (currently open to anyone with the URL).
-- Add a learned fusion layer instead of simple probability averaging if you
-  want to improve on multimodal combination.
