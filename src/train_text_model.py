@@ -25,7 +25,7 @@ from sklearn.preprocessing import LabelEncoder
 from sklearn.metrics import accuracy_score, classification_report, confusion_matrix
 
 BASE_DIR = os.path.abspath(os.path.join(os.path.dirname(__file__), ".."))
-DATA_PATH = os.path.join(BASE_DIR, "data", "complaints_text.csv")
+DATA_PATH = os.path.join(BASE_DIR, "data", "complaints_text_cleaned.csv")
 MODELS_DIR = os.path.join(BASE_DIR, "models")
 os.makedirs(MODELS_DIR, exist_ok=True)
 
@@ -44,14 +44,16 @@ def main():
 
     vectorizer = TfidfVectorizer(
         ngram_range=(1, 2),
-        max_features=1000,
+        max_features=5000,
         stop_words="english",
         sublinear_tf=True,
+        min_df=2,
+        max_df=0.95,
     )
     X_train_vec = vectorizer.fit_transform(X_train)
     X_test_vec = vectorizer.transform(X_test)
 
-    model = LogisticRegression(max_iter=1000, C=0.1,random_state=42)
+    model = LogisticRegression(max_iter=1000, C=2,random_state=42)
     model.fit(X_train_vec, y_train)
 
     # Real 5-fold cross validation on the training split

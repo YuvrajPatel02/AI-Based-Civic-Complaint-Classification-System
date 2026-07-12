@@ -93,17 +93,35 @@ def classify_complaint(text: str = None, image_path: str = None) -> dict:
         image_proba, image_classes = _predict_image_proba(image_path)
 
     if has_text and image_proba is not None:
-        # align class orders (both label encoders are fit on the same 5 category names)
         classes = list(text_classes)
+        
         aligned_image_proba = np.array([
             image_proba[list(image_classes).index(c)] if c in image_classes else 0.0
             for c in classes
         ])
-        combined = (text_proba + aligned_image_proba) / 2.0
+
+        text_idx = np.argmax(text_proba)
+        image_idx = np.argmax(aligned_image_proba)
+
+        text_conf = text_proba[text_idx]
+        image_conf = aligned_image_proba[image_idx]
+        
+        # If both models agree, average them.
+        if text_idx == image_idx:
+            combined = (text_proba + aligned_image_proba) / 2
+
+        # If they disagree, trust the more confident model.
+        elif text_conf >= image_conf:
+          combined = text_proba
+        else:
+          combined = aligned_image_proba
+
         idx = int(np.argmax(combined))
         category = classes[idx]
         confidence = float(combined[idx])
         source = "text+image (fused)"
+
+        
     elif has_text:
         idx = int(np.argmax(text_proba))
         category = text_classes[idx]
